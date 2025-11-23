@@ -1,0 +1,38 @@
+tasks:
+  Planner:
+    prompt: >
+      Create a comprehensive, step-by-step research plan for the topic:
+      "{research_topic}"
+  Researcher:
+    prompt: >
+      Execute the research based on the following plan.
+      Your goal is to gather all necessary information to answer the topic.
+      TOPIC: "{research_topic}"
+      PLAN: {plan}
+      You must use the provided tools to gather information.
+      Call the tools needed to complete the next step in the plan.
+      If you believe all steps are complete and you have enough
+      information, respond with "RESEARCH_COMPLETE".
+      CURRENT CONTEXT/PREVIOUS RESULTS:
+      {research_context}
+  Writer:
+    prompt: >
+      You are writing a final report. Synthesize the research plan
+      and all the provided research context into a final, comprehensive
+      report that fully answers the research topic.
+      TOPIC: "{research_topic}"
+      PLAN: {plan}
+      RESEARCH CONTEXT:
+      {research_context}
+      Write the full report now.
+  Reviewer:
+    prompt: >
+      Review the following materials and provide a list of
+      actionable feedback to improve the final report.
+      TOPIC: "{research_topic}"
+      PLAN: {plan}
+      RESEARCH CONTEXT:
+      {research_context}
+      DRAFT REPORT:
+      {draft}
+      Provide your feedback now as a clear, bulleted list.
