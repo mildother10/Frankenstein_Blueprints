@@ -33,7 +33,10 @@ qbraid==0.10.0
 # --- Deep Dependencies for Compatibility ---
 transformers
 peft==0.8.2
+qbraid==0.10.0
+PyGithub==1.59.1 # <-- ADD THIS LINE
 
+# --- Deep Dependencies for Compatibility ---
 # --- Utilities ---
 python-dotenv==1.0.1
 honcho==1.1.0

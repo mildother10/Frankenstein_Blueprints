@@ -2,17 +2,10 @@ import requests
 from bs4 import BeautifulSoup
 from langchain_core.tools import tool
 
-def scrape_website(url: str) -> str:
-    try:
-        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
-        if response.status_code != 200:
-            return f"Error: Failed to retrieve content from {url}"
-        soup = BeautifulSoup(response.content, 'html.parser')
-        for script in soup(["script", "style"]): script.decompose()
-        text = soup.get_text(separator=' ', strip=True)
-        return ' '.join(text.split()[:500])
-    except Exception as e:
-        return f"Error scraping {url}: {e}"
+# --- THIS IS THE REFACTOR ---
+# We now import our robust, reusable helper function
+from utils.scraping_utils import scrape_website
+# --------------------------
 
 @tool("O'Reilly Search Tool")
 def search_oreilly(query: str) -> str:
@@ -21,7 +14,7 @@ def search_oreilly(query: str) -> str:
     related to the query. Scrapes the top 3 results.
     """
     print(f"Tool: search_oreilly (Query: {query})")
-    search_url = f"https://www.oreilly.com/search/?query={query}"
+    search_url = f"httpsfs://www.oreilly.com/search/?query={query}"
     try:
         response = requests.get(search_url, headers={'User-Agent': 'Mozilla/5.0'})
         soup = BeautifulSoup(response.content, 'html.parser')
@@ -30,8 +23,9 @@ def search_oreilly(query: str) -> str:
         output = []
         for res in results[:3]:
             title = res.get_text(strip=True)
-            url = f"https://www.oreilly.com{res['href']}"
-            snippet = scrape_website(url)
+            url = f"https"f"://www.oreilly.com{res['href']}"
+            # --- SEE HOW CLEAN THIS IS? ---
+            snippet = scrape_website(url) 
             output.append(f"- Title: {title}\n  URL: {url}\n  Snippet: {snippet}\n")
         return "\n".join(output)
     except Exception as e:
@@ -44,7 +38,7 @@ def search_coursera(query: str) -> str:
     Returns the top 3 results.
     """
     print(f"Tool: search_coursera (Query: {query})")
-    search_url = f"https://www.coursera.org/search?query={query}"
+    search_url = f"httpsfs://www.coursera.org/search?query={query}"
     try:
         response = requests.get(search_url, headers={'User-Agent': 'Mozilla/5.0'})
         soup = BeautifulSoup(response.content, 'html.parser')
@@ -62,7 +56,7 @@ def search_deeplearning_ai(query: str) -> str:
     related to the query. Returns the top 3 results.
     """
     print(f"Tool: search_deeplearning_ai (Query: {query})")
-    search_url = f"https://www.deeplearning.ai/search/?s={query}"
+    search_url = f"httpsfs://www.deeplearning.ai/search/?s={query}"
     try:
         response = requests.get(search_url, headers={'User-Agent': 'Mozilla/5.0'})
         soup = BeautifulSoup(response.content, 'html.parser')
