@@ -1,31 +1,26 @@
-# --- Core AI & Agent Framework ---
+# --- CPU-Only Torch Index (Fixes "No space left" error) ---
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# --- Core LangGraph Framework (Lean & Compatible) ---
 langgraph==0.1.1
-langchain==0.2.11
-langchain-core==0.2.23
-langchain-community==0.2.10
-langchain-huggingface==0.0.3
+langchain-core==0.2.15
 
-# --- LLM Backend ---
+# --- LLM & Vector DB (Unpinned) ---
 ollama==0.3.0
-
-# --- RAG System (For DLAI Knowledge Base) ---
-chromadb==0.5.4
 sentence-transformers==3.0.1
 nbformat==5.10.4
 
-# --- Web Framework (API & UI) ---
-fastapi==0.111.1
+# --- Microservice Framework (FastAPI - Downgraded) ---
+fastapi==0.109.2
 python-fasthtml==0.12.35
 uvicorn==0.30.1
 pyngrok==7.1.6
 requests==2.32.3
 fastapi-cors==0.0.1
 
-# --- Scraping & Web Tools ---
+# --- Research Tools ---
 beautifulsoup4==4.12.3
 firecrawl-py==4.8.0
-
-# --- Specialized Research Tools ---
 arxiv==2.1.3
 huggingface_hub
 qbraid==0.10.0
@@ -33,10 +28,14 @@ qbraid==0.10.0
 # --- Deep Dependencies for Compatibility ---
 transformers
 peft==0.8.2
-qbraid==0.10.0
-PyGithub==1.59.1 # <-- ADD THIS LINE
+PyGithub==1.59.1
 
-# --- Deep Dependencies for Compatibility ---
 # --- Utilities ---
 python-dotenv==1.0.1
-honcho==1.1.0
+honcho==1.0.1
+
+# --- CrewAI (UNPINNED - Let resolver find compatible version) ---
+crewai[tools]
+
+# --- Async Tool Dependency ---
+httpx==0.27.0

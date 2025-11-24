@@ -1,70 +1,90 @@
 import os
-from langchain_community.document_loaders import NotebookLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+import chromadb
 from langchain_community.vectorstores import Chroma
+# --- THIS IS THE FIX ---
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_core.tools import tool
+# --- (Old line was: from langchain_community.embeddings import SentenceTransformerEmbeddings) ---
+from langchain_community.document_loaders import NotebookLoader
 
-NOTEBOOK_DIR = "mcp-research-crew/knowledge_base/dlai_notebooks"
-DB_PATH = "mcp-research-crew/chroma_db_dlai"
-COLLECTION_NAME = "dlai_notebooks"
+# --- v0.4.24 COMPATIBLE VERSION ---
 
+# Define the path for the persistent database
+persist_directory = "chroma_db_dlai"
+# --- THIS IS THE FIX ---
+# Use the new HuggingFaceEmbeddings class
 embedding_function = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+# --- (Old line was: SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")) ---
 
-def _get_retriever():
-    vector_store = Chroma(
-        persist_directory=DB_PATH,
-        embedding_function=embedding_function,
-        collection_name=COLLECTION_NAME
-    )
-    return vector_store.as_retriever(search_kwargs={"k": 5})
-
-@tool("DLAI Knowledge Base Search Tool")
-def search_dlai_knowledge_base(query: str) -> str:
-    """
-    Searches the private DeepLearning.AI (DLAI) knowledge base
-    of Jupyter Notebooks for code snippets and technical explanations.
-    """
-    print(f"Tool: search_dlai_knowledge_base (Query: {query})")
-    try:
-        retriever = _get_retriever()
-        docs = retriever.invoke(query)
-        if not docs:
-            return f"No relevant information found for: {query}"
-        context = [f"--- Source: {d.metadata.get('source', 'N/A')} ---\n{d.page_content}" for d in docs]
-        return "\n---\n".join(context)
-    except Exception as e:
-        if "does not exist" in str(e):
-             return "Error: The DLAI knowledge base has not been initialized."
-        return f"Error searching DLAI knowledge base: {e}"
+# Define the path to the knowledge base
+knowledge_base_path = "./mcp-research-crew/knowledge_base"
 
 def load_and_embed_notebooks():
-    print("--- Starting DLAI Knowledge Base Setup ---")
-    os.makedirs(NOTEBOOK_DIR, exist_ok=True)
-    notebook_files = [os.path.join(NOTEBOOK_DIR, f) for f in os.listdir(NOTEBOOK_DIR) if f.endswith(".ipynb")]
+    """
+    Loads .ipynb notebooks, splits them, and embeds them into a Chroma vector store.
+    This version is compatible with chromadb v0.4.x.
+    """
+    print("--- Starting DLAI Knowledge Base Setup (v0.4.x compatible) ---")
+    
+    if os.path.exists(persist_directory):
+        print(f"--- Found old DB. Exorcising '{persist_directory}'... ---")
+        import shutil
+        shutil.rmtree(persist_directory)
+        print("--- Old DB successfully deleted. ---")
+
+    notebook_files = [f for f in os.listdir(knowledge_base_path) if f.endswith('.ipynb')]
     
     if not notebook_files:
-        print(f"Warning: No .ipynb files found in {NOTEBOOK_DIR}. Creating dummy notebook.")
-        dummy_path = os.path.join(NOTEBOOK_DIR, "dummy_notebook.ipynb")
-        with open(dummy_path, 'w') as f:
-            f.write('{"cells": [{"cell_type": "markdown", "source": "This is a test notebook."}], "metadata": {}, "nbformat": 4, "nbformat_minor": 4}')
-        notebook_files = [dummy_path]
+        print("--- No notebooks found to load. Skipping RAG setup. ---")
+        return
 
-    all_docs = []
-    for nb_path in notebook_files:
-        loader = NotebookLoader(nb_path)
-        docs = loader.load()
-        for doc in docs: doc.metadata["source"] = nb_path
-        all_docs.extend(docs)
-
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    split_docs = text_splitter.split_documents(all_docs)
+    print(f"--- Found {len(notebook_files)} notebooks. Loading... ---")
     
+    docs = []
+    for notebook_file in notebook_files:
+        loader = NotebookLoader(
+            os.path.join(knowledge_base_path, notebook_file),
+            include_outputs=False,
+            remove_code_prompts=True,
+            remove_hidden_cells=True
+        )
+        docs.extend(loader.load())
+
+    if not docs:
+        print("--- Notebooks were empty or failed to load. Skipping RAG setup. ---")
+        return
+
+    print(f"--- Notebooks loaded. Embedding {len(docs)} documents... ---")
+
     vector_store = Chroma.from_documents(
-        documents=split_docs,
+        documents=docs, 
         embedding=embedding_function,
-        persist_directory=DB_PATH,
-        collection_name=COLLECTION_NAME
+        persist_directory=persist_directory
     )
-    vector_store.persist()
-    print("✅ --- DLAI Knowledge Base Setup Complete ---")
+    
+    print("--- ✅ DLAI Knowledge Base Embedded Successfully. ---")
+    return vector_store.as_retriever()
+
+def search_dlai_knowledge_base(query: str) -> str:
+    """
+    Searches the DeepLearning.AI knowledge base for a given query.
+    """
+    print(f"--- 🧠 RAG Tool: Searching DLAI KB for: {query} ---")
+    
+    client = chromadb.PersistentClient(path=persist_directory)
+    # --- THIS IS THE FIX ---
+    embedding_func = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    # --- (Old line was: SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")) ---
+    
+    vector_store = Chroma(
+        client=client,
+        embedding_function=embedding_func,
+        collection_name="langchain" # Default collection name
+    )
+    
+    results = vector_store.similarity_search(query, k=3)
+    
+    if not results:
+        return "No relevant information found in the DLAI knowledge base."
+    
+    context = "\n\n---\n\n".join([doc.page_content for doc in results])
+    return f"Found relevant context in DLAI knowledge base:\n\n{context}"
