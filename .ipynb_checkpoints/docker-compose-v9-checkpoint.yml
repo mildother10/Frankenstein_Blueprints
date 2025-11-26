@@ -1,0 +1,153 @@
+# "Hulk Smash 36.0" (Master Blueprint)
+# This is the "clean" (v29.0) "Hybrid" (v35.0) 
+
+version: '3.8'
+
+services:
+
+  # --- "Hulk Smash 32.0" (Padded Layer) ---
+  ea_server:
+    image: ea_server_image
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.ea_server
+    ports:
+      - "8000:8000" # The *only* port "smashed" (v28.0) (exposed) to the User (v6.0 "Hybrid")
+    networks:
+      - frankenstein_net
+
+  # --- "Dumb" (v28.0) (CPU) "Managers" (v35.0) ---
+  ceo_server:
+    image: ceo_server_image
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.ceo_server
+    ports:
+      - "8001:8001"
+    depends_on:
+      - cto_server
+      - chro_server
+      - librarian_server
+    networks:
+      - frankenstein_net
+
+  clo_server:
+    image: clo_server_image
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.clo_server
+    ports:
+      - "8002:8002"
+    networks:
+      - frankenstein_net
+
+  librarian_server:
+    image: librarian_server_image
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.librarian_server
+    ports:
+      - "8003:8003"
+    networks:
+      - frankenstein_net
+
+  docker_proxy:
+    image: docker_proxy_image
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.docker_proxy
+    ports:
+      - "8004:8004"
+    networks:
+      - frankenstein_net
+
+  pipecat_server:
+    image: pipecat_server_image
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.pipecat_server
+    ports:
+      - "8005:8005"
+    networks:
+      - frankenstein_net
+
+  dashboard_server:
+    image: dashboard_server_image
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.dashboard_server
+    ports:
+      - "8006:8006"
+    networks:
+      - frankenstein_net
+
+  # --- "Hulk" (v28.0) (GPU) "Scientists" (v35.0) ---
+  cto_server:
+    image: cto_server_image
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.cto_server
+    ports:
+      - "8007:8007"
+    # This is where we "smash" (v28.0) (add) the "Hulk" (v28.0) (GPU)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    networks:
+      - frankenstein_net
+
+  chro_server:
+    image: chro_server_image
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.chro_server
+    ports:
+      - "8008:8008"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    networks:
+      - frankenstein_net
+
+  cio_server:
+    image: cio_server_image
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.cio_server
+    ports:
+      - "8009:8009"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    networks:
+      - frankenstein_net
+
+  quantum_server:
+    image: quantum_server_image
+    build:
+      context: .
+      dockerfile: ./dockerfiles/Dockerfile.quantum_server
+    ports:
+      - "8010:8010"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    networks:
+      - frankenstein_net
+
+networks:
+  frankenstein_net:
+    driver: bridge
+
