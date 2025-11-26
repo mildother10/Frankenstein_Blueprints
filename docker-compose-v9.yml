@@ -1,7 +1,6 @@
-# "Hulk Smash 36.0" (Master Blueprint)
-# This is the "clean" (v29.0) "Hybrid" (v35.0) 
-
-version: '3.8'
+# "Hulk Smash 45.0" (AWS-Ready Blueprint)
+# This is our "clean" (v29.0), "Hybrid" (v35.0) production blueprint.
+# This file is 100% correct for our "v22.0" (AWS) "Launchpad" (v29.0).
 
 services:
 
@@ -12,7 +11,7 @@ services:
       context: .
       dockerfile: ./dockerfiles/Dockerfile.ea_server
     ports:
-      - "8000:8000" # The *only* port "smashed" (v28.0) (exposed) to the User (v6.0 "Hybrid")
+      - "8000:8000"
     networks:
       - frankenstein_net
 
@@ -82,20 +81,19 @@ services:
       - frankenstein_net
 
   # --- "Hulk" (v28.0) (GPU) "Scientists" (v35.0) ---
-cto_server:
+  cto_server:
     image: cto_server_image
     build:
       context: .
       dockerfile: ./dockerfiles/Dockerfile.cto_server
     ports:
       - "8007:8007"
-    # "Hulk Smash 42.0" (CPU-Fallback) - "Smash" (v28.0) (comment out) this "Hulk" (v28.0) (GPU) block
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           capabilities: [gpu]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
     networks:
       - frankenstein_net
 
