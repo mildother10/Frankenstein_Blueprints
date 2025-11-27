@@ -1,6 +1,45 @@
-# "Hulk Smash 39.0" (Monolithic) - "Dumb" (v28.0) (CPU)
-FROM python:3.11-slim
+# ---
+# DOCKERFILE: CEO Server (Port 8008)
+#
+# Defines the container blueprint for the "CEO Server."
+# This is a GPU-ACCELERATED service, requiring the NVIDIA CUDA
+# base image to run its specialized agent.
+# ---
+
+# 1. Base Image
+# Start from the official NVIDIA CUDA runtime image.
+# This provides the necessary drivers for GPU access.
+FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
+
+# 2. System Dependencies
+# Install Python 3.11 and pip, which are not in the base CUDA image.
+RUN apt-get update && apt-get install -y     python3.11     python3-pip     && rm -rf /var/lib/apt/lists/*
+
+# 3. Working Directory
+# Set the default directory inside the container to '/app'.
 WORKDIR /app
-RUN pip install --no-cache-dir fastapi uvicorn aiohttp
+
+# 4. Install 'uv'
+# Install 'uv', our high-speed Python package installer.
+# This accelerates the build process significantly.
+RUN pip install uv
+
+# 5. Copy Requirements
+# Copy the *single* master requirements file into the container.
+# PITCH: This ensures 100% build replicability. Every service
+# is built with the exact same dependencies, eliminating
+# "it works on my machine" errors.
+COPY ./legacy_code/mcp-research-crew/requirements.txt .
+
+# 6. Install Requirements
+# Use 'uv' to install all dependencies from the requirements file.
+RUN uv pip install --no-cache-dir -r requirements.txt
+
+# 7. Copy Server Code
+# Copy the specific Python server file into the container.
 COPY ./servers/ceo_server.py .
-CMD ["uvicorn", "ceo_server:app", "--host", "0.0.0.0", "--port", "8001"]
+
+# 8. Run Command
+# Define the command to run the FastAPI app on container start.
+#
+CMD ["uvicorn", "ceo_server:app", "--host", "0.0.0.0", "--port", "8008"]

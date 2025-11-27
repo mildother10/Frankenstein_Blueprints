@@ -1,84 +1,95 @@
+# ---
+# TASK CONFIGURATION (tasks.yaml)
+#
+# Defines the "what" and "how" for our 10-Service "Factory."
+# This file outlines the sequence of operations (tasks) and
+# maps each task to a specific agent for execution.
+# ---
+
 tasks:
-  Planner:
-    prompt: >
-      Create a comprehensive, step-by-step research plan for the topic:
-      "{research_topic}"
+  # ---
+  # Task 1: Create the research blueprint.
+  # ---
+  - name: create_research_plan
+    # The agent responsible for this task.
+    agent: Planner
+    # The expected output description for this task.
+    description: >
+      A detailed, 6-step research plan structured around the
+      5W1H (Who, What, When, Where, How, Why) agents.
 
-  # --- COORDINATOR TASK ---
-  Researcher:
-    prompt: >
-      Synthesize the findings from all six specialized agents (Who, What, When, Where, How, Why)
-      into a single, unified research context block that fully addresses the original topic.
-      Do not add new information or call tools.
-      
-      TOPIC: "{research_topic}"
-      PLAN: {plan}
-      CONCURRENT FINDINGS: 
-      {research_context}
-      
-      Provide the synthesized research context now.
+  # ---
+  # Task 2: Execute the 5W1H agents *in parallel*.
+  #
+  # PITCH: This "threading" is the core optimization.
+  # It transforms the 5-8 minute bottleneck (from V1)
+  # into a concurrent operation, drastically reducing wait time.
+  # ---
+  - name: parallel_research
+    # This task is a "list" of sub-tasks that will be threaded.
+    type: parallel
+    description: >
+      Execute six concurrent research streams to gather
+      all necessary information.
+    # The individual tasks to be run in parallel.
+    tasks:
+      - name: research_who
+        agent: WhoAgent
+        description: Identify key individuals and organizations.
+      - name: research_what
+        agent: WhatAgent
+        description: Define core concepts, terms, and data.
+      - name: research_when
+        agent: WhenAgent
+        description: Establish the timeline and key dates.
+      - name: research_where
+        agent: WhereAgent
+        description: Locate key papers, courses, and code repositories.
+      - name: research_how
+        agent: HowAgent
+        description: Investigate the implementation and "how it works."
+      - name: research_why
+        agent: WhyAgent
+        description: Analyze the impact, motivation, and "why."
 
-  # --- 5W1H PARALLEL TASKS ---
-  WhoAgent:
-    prompt: >
-      Execute the plan's step related to **WHO** is involved. Use the GitHub and Web Search tools.
-      TOPIC: "{research_topic}"
-      PLAN: {plan}
+  # ---
+  # Task 3: Synthesize all parallel findings.
+  # ---
+  - name: synthesize_research
+    agent: Researcher
+    description: >
+      A single, unified context block that merges all
+      concurrent findings from the 5W1H agents.
+    # This task depends on the parallel tasks completing.
+    # It "waits" for the results from all 6 agents.
+    context:
+      - research_who
+      - research_what
+      - research_when
+      - research_where
+      - research_how
+      - research_why
 
-  WhatAgent:
-    prompt: >
-      Execute the plan's step related to **WHAT** concepts and definitions are required. Use the RAG and ArXiv tools.
-      TOPIC: "{research_topic}"
-      PLAN: {plan}
+  # ---
+  # Task 4: Write the final draft report.
+  # ---
+  - name: write_final_report
+    agent: Writer
+    description: >
+      A comprehensive, well-structured final report that
+      answers the original research topic.
+    # This task "waits" for the synthesis (Task 3) to be complete.
+    context:
+      - synthesize_research
 
-  WhenAgent:
-    prompt: >
-      Execute the plan's step related to **WHEN** the technology was developed or adopted. Use the ArXiv and Web Search tools.
-      TOPIC: "{research_topic}"
-      PLAN: {plan}
-
-  WhereAgent:
-    prompt: >
-      Execute the plan's step related to **WHERE** the knowledge is located (courses, labs). Use the Librarian and Web Search tools.
-      TOPIC: "{research_topic}"
-      PLAN: {plan}
-
-  HowAgent:
-    prompt: >
-      Execute the plan's step related to **HOW** the code or algorithm works. Use the GitHub, Execute Python Code, and RAG tools.
-      TOPIC: "{research_topic}"
-      PLAN: {plan}
-
-  WhyAgent:
-    prompt: >
-      Execute the plan's step related to **WHY** this technology matters and its impact. Use the Web Search tools.
-      TOPIC: "{research_topic}"
-      PLAN: {plan}
-
-  # --- FINAL OUTPUT TASKS ---
-  Writer:
-    prompt: >
-      You are writing a final report. Synthesize the research plan
-      and all the provided research context into a final, comprehensive
-      report that fully answers the research topic.
-      
-      TOPIC: "{research_topic}"
-      PLAN: {plan}
-      RESEARCH CONTEXT:
-      {research_context}
-      
-      Write the full report now.
-
-  Reviewer:
-    prompt: >
-      Review the following materials and provide a list of
-      actionable feedback to improve the final report.
-      
-      TOPIC: "{research_topic}"
-      PLAN: {plan}
-      RESEARCH CONTEXT:
-      {research_context}
-      DRAFT REPORT:
-      {draft}
-      
-      Provide your feedback now as a clear, bulleted list.
+  # ---
+  # Task 5: Review and critique the final report.
+  # ---
+  - name: review_final_report
+    agent: Reviewer
+    description: >
+      Actionable, bullet-point feedback to improve the
+      final report's quality, accuracy, and clarity.
+    # This task "waits" for the draft (Task 4) to be complete.
+    context:
+      - write_final_report
