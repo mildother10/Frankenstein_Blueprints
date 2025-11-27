@@ -25,15 +25,14 @@ WORKDIR /app
 RUN pip install uv
 
 # 5. Copy Requirements
-# Copy the *single* master requirements file into the container.
-# PITCH: This ensures 100% build replicability. Every service
-# is built with the exact same dependencies, eliminating
-# "it works on my machine" errors.
+# Copy the single master requirements file into the container.
 COPY ./legacy_code/mcp-research-crew/requirements.txt .
 
-# 6. Install Requirements
-# Use 'uv' to install all dependencies from the requirements file.
-RUN uv pip install --no-cache-dir -r requirements.txt
+# 6. Install Requirements (SKIPPED)
+# Per our 'chunk' strategy, this is commented out to prevent
+# memory overload and GitHub commit issues.
+# ---
+# RUN uv pip install --no-cache-dir -r requirements.txt
 
 # 7. Copy Server Code
 # Copy the specific Python server file into the container.
@@ -41,5 +40,4 @@ COPY ./servers/ceo_server.py .
 
 # 8. Run Command
 # Define the command to run the FastAPI app on container start.
-#
 CMD ["uvicorn", "ceo_server:app", "--host", "0.0.0.0", "--port", "8008"]

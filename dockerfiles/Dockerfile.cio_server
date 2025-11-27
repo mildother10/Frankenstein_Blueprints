@@ -1,7 +1,44 @@
-# "Hulk Smash 39.0" (Monolithic) - "Hulk" (v28.0) (GPU)
+# ---
+# DOCKERFILE: CIO Server (Port 8009)
+#
+# Defines the container blueprint for the "CIO Server."
+# This is a GPU-ACCELERATED service, requiring the NVIDIA CUDA
+# base image to run its specialized agent.
+# ---
+
+# 1. Base Image
+# Start from the official NVIDIA CUDA runtime image.
+# This provides the necessary drivers for GPU access.
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
-RUN apt-get update && apt-get install -y python3.11 python3-pip
+
+# 2. System Dependencies
+# Install Python 3.11 and pip, which are not in the base CUDA image.
+RUN apt-get update && apt-get install -y     python3.11     python3-pip     && rm -rf /var/lib/apt/lists/*
+
+# 3. Working Directory
+# Set the default directory inside the container to '/app'.
 WORKDIR /app
-RUN pip install --no-cache-dir fastapi uvicorn aiohttp torch transformers accelerate
+
+# 4. Install 'uv'
+# Install 'uv', our high-speed Python package installer.
+# This accelerates the build process significantly.
+RUN pip install uv
+
+# 5. Copy Requirements
+# Copy the single master requirements file into the container.
+COPY ./legacy_code/mcp-research-crew/requirements.txt .
+
+# 6. Install Requirements (SKIPPED)
+# Per our 'chunk' strategy, this is commented out to prevent
+# memory overload and GitHub commit issues.
+# ---
+# RUN uv pip install --no-cache-dir -r requirements.txt
+
+# 7. Copy Server Code
+# Copy the specific Python server file into the container.
 COPY ./servers/cio_server.py .
+
+# 8. Run Command
+# Define the command to run the FastAPI app on container start.
+# This port (8009) matches the uploaded legacy file.
 CMD ["uvicorn", "cio_server:app", "--host", "0.0.0.0", "--port", "8009"]
